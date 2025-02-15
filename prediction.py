@@ -2,100 +2,104 @@ import streamlit as st
 import pandas as pd
 import pickle
 
+
 # Load model
 def load_model(model_name):
-    if model_name == 'Logistic Regression':
-        model = pickle.load(open('models/no_resampling_logistic_regression_model.pkl', 'rb'))
-    elif model_name == 'SVM':
-        model = pickle.load(open('models/no_resampling_svm_model.pkl', 'rb'))
-    # elif model_name == 'Decission Tree':
-    #     model = pickle.load(open('models/decision_tree_model.pkl', 'rb'))
-    # elif model_name == 'Random Forest':
-    #     model = pickle.load(open('models/random_forest_model.pkl', 'rb'))
-    # elif model_name == 'XGB':
-    #     model = pickle.load(open('models/xgboost_model.pkl', 'rb'))
-    # elif model_name == 'GBM':
-    #     model = pickle.load(open('models/gradient_boosting_model.pkl', 'rb'))
-    return model
+   if model_name == 'Random Forrest':
+        model = pickle.load(open('model15/no_resampling_rf_model.pkl', 'rb'))
+   elif model_name == 'Logistic Regression':
+        model = pickle.load(open('model15/no_resampling_lr_model.pkl', 'rb'))
+   elif model_name == 'SVM':
+        model = pickle.load(open('model15/no_resampling_svm_model.pkl', 'rb'))
+   elif model_name == 'Smote_LR':
+         model = pickle.load(open('model15/smote_lr_model.pkl', 'rb'))
+   elif model_name == 'Random Forest':
+         model = pickle.load(open('models/random_forest_model.pkl', 'rb'))
+   elif model_name == 'XGB':
+         model = pickle.load(open('models/xgboost_model.pkl', 'rb'))
+   elif model_name == 'GBM':
+         model = pickle.load(open('models/gradient_boosting_model.pkl', 'rb'))
+   return model
+
+
 
 # Fungsi untuk melakukan prediksi
-def predict_attrition(model, data):
+def predict_status(model, data):
     predictions = model.predict(data)
     return predictions
 
 # Fungsi untuk mewarnai prediksi
-def color_predictions(val):
-    color = 'red' if val == 'Dropout' else 'green'
+def warna(wrn):
+    color = 'pink' if wrn == 'Dropout' else 'blue'
     return f'color: {color}'
 
+st.title('Jaya Jaya Institute Student Prediction using Machine Learning')
+
 def main():
-    st.title('Prediksi Student Performance menggunakan Model Machine Learning')
+    st.write("by B244044F")       
 
-    # Sidebar
-    st.sidebar.title("About Me")
-    st.sidebar.write("Name            : Maulana Kavaldo")
-    st.sidebar.markdown("Id Dicoding\t: [maulanakavaldo](https://www.dicoding.com/users/maulanakavaldo/).")
-    st.sidebar.markdown("Reach out me : [LinkedIn](https://www.linkedin.com/in/maulana-kavaldo/).")
 
-    with st.expander("Petunjuk Penggunaan:"):
+
+tab1, tab2, tab3 = st.tabs([
+    "Prediction",
+    "Dashboard",
+    "About"
+])
+
+with tab1:
+    st.header("Student Prediction")
+
+    with st.expander("How to run the prediction:"):
         st.write(
             """
-                1. Buka sidebar, disebelah kiri terlihat tanda panah. Kamu bisa men-kliknya sehingga sidebar dapat terbuka.
-                2. Unggah file CSV yang berisi data karyawan. Kamu bisa menggunakan contoh sample_test.csv yang terdapat pada proyek ini.
-                3. Pilih model machine learning.
-                4. Klik tombol "Prediksi' untuk melihat hasil prediksi.
-                5. Kamu bisa melakukan download hasil prediksi dengan klik tombol 'Download (.csv)'
+                1. Choose machine learning model
+                2. Upload Filetest.csv
+                3. Click predict button
+                4. Result will appear and can be 'Download (.csv)'. 
             """
         )
 
-    # Pemilihan model ML
-    model_name = st.sidebar.selectbox("Pilih Model Machine Learning", ("Logistic Regression", "SVM"
-                                                                        # ,"Decission Tree", "Random Forest", "XGB", "GBM"
-                                                                       ))
+
+    
+    model_name = st.radio("Choose Machine Learning Model", ('Smote_LR','Random Forrest',"Logistic Regression", "SVM"))
+
 
     # Upload File
-    uploaded_file = st.sidebar.file_uploader("Unggah file CSV untuk prediksi", type=["csv"])
+    upload = st.file_uploader("Upload Filetest", type=["csv"])
 
-    if uploaded_file is not None:
-        data = pd.read_csv(uploaded_file)
+    if upload is not None:
+        data = pd.read_csv(upload)
 
-        st.write("Data test:")
-        preview_rows = st.slider("Kamu mau melihat berapa data? Coba gerakkan slider ini ya.", 1, len(data), 5)
-        st.write(data.head(preview_rows))
-
-        # Extract StudentId dan StudentName
         ID = data['ID']
-        StudentName = data['Name']
+        Name = data['Name']
         data = data.drop(columns=['ID', 'Name'])
 
-        # Load model yang dipilih
+        # Load model
         model = load_model(model_name)
 
-        # Button untuk trigger
-        if st.button('Prediksi'):
-            # Melakukan prediksi
-            predictions = predict_attrition(model, data)
-
-            # Mengubah value agar mudah dipahami
+        # click button
+        if st.button('✨Predict'):
+            
+            predictions = predict_status(model, data)
+        
             prediction_labels = ['Graduate' if pred == 1 else 'Dropout' for pred in predictions]
 
-            # Menampilkan hasilnya
-            result_df = pd.DataFrame({
+            # Result
+            hasil = pd.DataFrame({
                 'ID': ID,
-                'Name': StudentName,
+                'Name': Name,
                 'Status Prediction': prediction_labels
             })
+         
+            st.write("Prediction result:")
+            st.dataframe(hasil.style.applymap(warna, subset=['Status Prediction']))
 
-            # Menampilkan hasil prediksi dengan styling
-            st.write("Hasil Prediksi:")
-            st.dataframe(result_df.style.applymap(color_predictions, subset=['Status Prediction']))
-
-            # Download hasil prediksi
-            csv = result_df.to_csv(index=False)
+            # Download result
+            csv = hasil.to_csv(index=False)
             st.download_button(
-                label="Download (.csv)",
+                label="Download Prediction Result",
                 data=csv,
-                file_name='hasil-prediksi-student.csv',
+                file_name='Prediction result.csv',
                 mime='text/csv'
             )
 
